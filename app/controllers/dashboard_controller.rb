@@ -37,7 +37,7 @@ class DashboardController < ActionController::Base
   end
 
   def set_dashboard_scripts
-    @dashboard_scripts = GlobalConfig.get_value('DASHBOARD_SCRIPTS')
+    @dashboard_scripts = sensitive_path? ? nil : GlobalConfig.get_value('DASHBOARD_SCRIPTS')
   end
 
   def ensure_installation_onboarding
@@ -72,7 +72,17 @@ class DashboardController < ActionController::Base
     @application_pack = if request.path.include?('/auth') || request.path.include?('/login')
                           'v3app'
                         else
-                          'application'
+                          'dashboard'
                         end
+  end
+
+  def sensitive_path?
+    # dont load dashboard scripts on sensitive paths like password reset
+    sensitive_paths = [edit_user_password_path].freeze
+
+    # remove app prefix
+    current_path = request.path.gsub(%r{^/app}, '')
+
+    sensitive_paths.include?(current_path)
   end
 end
